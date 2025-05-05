@@ -2,6 +2,7 @@
 
 This project trains an SVM model to classify code blocks into different categories (class, function, variable, loop, condition) using TF-IDF features.
 it is based on this paper https://peerj.com/articles/cs-1230/
+
 ## Project Structure
 
 ```
@@ -112,6 +113,88 @@ The SVM training process involves:
 - **running_svm.ipynb**: The Jupyter notebook that orchestrates the training process.
 - **common/tools.py**: Contains utility functions for data loading, TF-IDF transformation, and cross-validation.
 
+### Alternative SVM Implementations
+
+The codebase includes several SVM variants for different use cases:
+
+1. **svm_hyperparam_train.py**: Uses Bagging Classifier with SVM as the base estimator for improved performance.
+
+2. **svm_augment_train.py**: Implements data augmentation by masking variable names in code blocks, which can help the model generalize better.
+
+3. **svm_for_semi.py**: Implements semi-supervised learning, allowing the model to learn from both labeled and unlabeled data.
+
+4. **hierarchy_svm_svm.py**: Implements a hierarchical SVM approach with two levels of classification, which can be useful for complex classification tasks.
+
+Each implementation has its own advantages and can be used depending on the specific requirements of your task.
+
+## Using the Trained Model for Prediction
+
+Once you have trained the SVM model, you can use it to make predictions on new code blocks. The following Python code demonstrates how to load the trained model and make predictions:
+
+```python
+import pickle
+import pandas as pd
+from common.tools import tfidf_transform
+
+# Paths to the trained model and TF-IDF vectorizer
+MODEL_PATH = "../models/svm_linear_search_graph_v1.sav"
+TFIDF_PATH = "../models/tfidf_hyper_svm_graph_v1.pickle"
+
+# Load the trained model
+clf = pickle.load(open(MODEL_PATH, 'rb'))
+print("Model loaded successfully")
+
+# Example new code blocks to classify
+new_code_blocks = [
+    "class MyClass:\n    def __init__(self, name):\n        self.name = name",
+    "def calculate_sum(a, b):\n    return a + b",
+    "x = 10\ny = 20\nz = x + y"
+]
+
+# Convert to DataFrame
+df_new = pd.DataFrame({"code_block": new_code_blocks})
+
+# Transform the new code blocks using the trained TF-IDF vectorizer
+# Note: We don't need to pass tfidf_params here as the vectorizer is already trained
+features = tfidf_transform(df_new["code_block"], {}, TFIDF_PATH)
+
+# Make predictions
+predictions = clf.predict(features)
+print("Predictions:", predictions)
+
+# Map predictions to class names if needed
+# For example, if your classes are: 0=class, 1=function, 2=variable, etc.
+class_names = ["class", "function", "variable", "loop", "condition"]
+predicted_classes = [class_names[pred] if pred < len(class_names) else "unknown" for pred in predictions]
+print("Predicted classes:", predicted_classes)
+```
+
+### Alternative Method Using get_metrics Function
+
+You can also use the `get_metrics` function from `common/tools.py` if you have ground truth labels for evaluation:
+
+```python
+from common.tools import get_metrics, tfidf_transform
+
+# Load the model and make predictions
+X = tfidf_transform(df_new["code_block"], {}, TFIDF_PATH)
+y = df_new["graph_vertex_id"].values  # If you have ground truth labels
+TAGS_TO_PREDICT = ["class", "function", "variable", "loop", "condition"]  # Your class labels
+
+# Get predictions and evaluation metrics
+X, y, y_pred, metrics = get_metrics(X, y, TAGS_TO_PREDICT, MODEL_PATH)
+print(f"Accuracy: {metrics['test_accuracy']*100:.2f}%")
+print(f"F1 Score: {metrics['test_f1_score']*100:.2f}%")
+```
+
+### Related Files
+
+The following files are involved in the prediction process:
+
+- `common/tools.py`: Contains utility functions for loading models and transforming data
+  - `tfidf_transform()`: Transforms new code blocks using the trained TF-IDF vectorizer
+  - `get_metrics()`: Makes predictions and calculates evaluation metrics
+
 ## Troubleshooting
 
 If you encounter any issues:
@@ -120,6 +203,8 @@ If you encounter any issues:
 2. Check that the `markup_data.csv` file exists in the `data/` directory.
 3. Verify that the `markup_data.csv` file contains the required columns.
 4. If the dataset is too large, try running with a smaller subset.
+5. When making predictions, ensure that the model and TF-IDF vectorizer files exist in the specified paths.
+6. If you get errors during prediction, check that your new code blocks have similar formatting to the training data.
 
 ## License
 
