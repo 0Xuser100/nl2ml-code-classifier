@@ -1,0 +1,22 @@
+{
+  "class": {
+    "id": 1,
+    "name": "class"
+  },
+  "function": {
+    "id": 2,
+    "name": "function"
+  },
+  "variable": {
+    "id": 3,
+    "name": "variable"
+  },
+  "loop": {
+    "id": 4,
+    "name": "loop"
+  },
+  "condition": {
+    "id": 5,
+    "name": "condition"
+  }
+}
